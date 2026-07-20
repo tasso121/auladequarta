@@ -1,0 +1,2 @@
+class IdentificadorNaoDeclaradoException(Exception):
+    pass
