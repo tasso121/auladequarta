@@ -2,10 +2,10 @@
 
 Port em Python da sequência de interpretadores da disciplina Paradigmas de
 Linguagens de Programacao (UFS), que originalmente fizemos em Java. Cada
-estagio acrescenta uma construcao de linguagem ao anterior, e eu reaproveito
-codigo entre os estagios sempre que os pacotes Java de origem eram
+estagio acrescenta uma construcao de linguagem ao anterior, e o codigo e
+reaproveitado entre os estagios sempre que os pacotes Java de origem eram
 identicos ou genericos o suficiente (o Java original duplica o pacote
-inteiro a cada estagio, aqui eu evitei isso).
+inteiro a cada estagio, isso foi evitado aqui).
 
 ## Estagios
 
@@ -35,8 +35,8 @@ python3 -m loo1.Exemplo4
   expressao de le1 sem precisar mexer nelas.
 - `le2.memory.Ambiente` e `Contexto` (pilha de escopos generica,
   `Generic[T]`) sao totalmente agnosticos ao tipo armazenado, por isso
-  reaproveito tambem em li1/li2/loo1, mesmo eles tendo um sistema de
-  `Tipo` completamente diferente de le1/le2.
+  sao reaproveitados tambem em li1/li2/loo1, mesmo eles tendo um sistema
+  de `Tipo` completamente diferente de le1/le2.
 - `li1` reaproveita `le2.memory` direto, mas tem seu proprio pacote
   `util.Tipo`/`TipoPrimitivo` (uma interface + `Enum`, em vez do
   `EnumSet` usado em le1/le2/lf1).
@@ -55,8 +55,8 @@ python3 -m loo1.Exemplo4
 Esse pacote (`orientadaObjetos1` no Java, cerca de 6700 linhas) usa nomes
 de pacote em portugues (`comando`, `expressao`, `declaracao`, `memoria`,
 `util`, `excecao`), diferente do li1/li2 que usam ingles (`command`,
-`expression`, `declaration`, `memory`). Mantive essa nomenclatura em
-portugues no porte pra ficar fiel ao original.
+`expression`, `declaration`, `memory`). Essa nomenclatura em portugues foi
+mantida no porte pra ficar fiel ao original.
 
 O loo1 bifurca toda a arvore de `comando`/`declaracao`/`expressao`/
 `util.Tipo*`, do mesmo jeito que o li1 bifurcou do le2: tem seu proprio

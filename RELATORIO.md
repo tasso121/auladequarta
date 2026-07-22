@@ -5,7 +5,7 @@ Repositório: git@github.com:tasso121/auladequarta.git
 
 ## 1. Objetivo
 
-Neste projeto eu converti para Python a sequência de interpretadores que construímos ao longo dos laboratórios da disciplina, originalmente em Java:
+Neste projeto convertemos para Python a sequência de interpretadores construída ao longo dos laboratórios da disciplina, originalmente em Java:
 
 | Estágio | Paradigma | Acrescenta em relação ao anterior |
 |---|---|---|
@@ -20,9 +20,9 @@ Cada estágio é um interpretador completo (avaliador de expressões, checador d
 
 ## 2. Metodologia
 
-Cada laboratório tem seu próprio pacote Java, com classes `Exemplo*.java` mostrando a linguagem em uso. Não tem gramática executável de verdade: a BNF é usada como especificação, e os programas de exemplo são montados na mão como árvore de sintaxe, tanto no Java quanto no meu porte em Python.
+Cada laboratório tem seu próprio pacote Java, com classes `Exemplo*.java` mostrando a linguagem em uso. Não tem gramática executável de verdade: a BNF é usada como especificação, e os programas de exemplo são montados na mão como árvore de sintaxe, tanto no Java quanto no porte em Python.
 
-Pra cada estágio segui o mesmo processo:
+Pra cada estágio o processo foi o mesmo:
 
 1. Ler o pacote Java inteiro, não só as assinaturas dos métodos.
 2. Portar cada classe pra um módulo Python correspondente, mantendo a mesma divisão de pacotes e a mesma semântica de cada método.
@@ -34,14 +34,14 @@ No final o projeto ficou com 241 arquivos `.py` e cerca de 3300 linhas de códig
 
 ## 3. Decisão central: reúso entre estágios
 
-A principal diferença do meu porte em relação ao Java original é que lá cada estágio duplica o pacote inteiro, mesmo quando o pacote não muda uma linha de um estágio pro outro (confirmei isso com `diff -rq` em vários pares de estágios). No meu porte em Python eu evitei essa duplicação: sempre que o `diff` (ignorando a linha de `package`) mostrava dois arquivos Java idênticos entre estágios, eu importava direto o módulo Python já escrito, em vez de reescrever.
+A principal diferença do porte em relação ao Java original é que lá cada estágio duplica o pacote inteiro, mesmo quando o pacote não muda uma linha de um estágio pro outro (confirmado com `diff -rq` em vários pares de estágios). No Python essa duplicação foi evitada: sempre que o `diff` (ignorando a linha de `package`) mostrava dois arquivos Java idênticos entre estágios, o módulo Python já escrito era importado direto, em vez de reescrito.
 
 Isso só foi possível porque:
 
 - `le1.expression.Expressao` já nasce com um parâmetro opcional `ambiente=None` em `avaliar/checaTipo/getTipo`, que o `le1` nunca usa. É esse parâmetro que permite `le2`/`lf1` reaproveitarem as classes de expressão do `le1` sem precisar mexer nelas.
 - `le2.memory.Ambiente` e `Contexto` (pilha de escopos genérica, `Generic[T]`) são totalmente agnósticos ao tipo armazenado, então dá pra reaproveitar também em `li1`/`li2`/`loo1`, mesmo eles tendo sistemas de `Tipo` completamente diferentes de `le1`/`le2`.
 
-Nos pontos em que o Java realmente muda tudo (`li1` troca o sistema de tipos inteiro e acrescenta `clone()`/`reduzir()` nas expressões, `loo1` troca tudo de novo com tipos de classe e ambientes de execução orientados a objetos), o meu porte também bifurca, sem forçar reúso onde nem o próprio Java reaproveita.
+Nos pontos em que o Java realmente muda tudo (`li1` troca o sistema de tipos inteiro e acrescenta `clone()`/`reduzir()` nas expressões, `loo1` troca tudo de novo com tipos de classe e ambientes de execução orientados a objetos), o porte também bifurca, sem forçar reúso onde nem o próprio Java reaproveita.
 
 ## 4. Notas por estágio
 
@@ -52,20 +52,20 @@ A base de tudo: literais inteiro/booleano/string, operadores aritméticos/lógic
 Acrescenta `Id`, `ExpDeclaracao` (`let x = e1 in e2`), `DecVariavel` e o pacote `memory` (pilha de escopos genérica). `ExpEquals` é sobrescrita com checagem de tipo mais permissiva (via interseção de tipos possíveis). Escopo é léxico, com shadowing correto testado nos exemplos.
 
 ### lf1, funções de primeira ordem
-Reaproveita praticamente 100% do pacote de expressões/memória do `le2`. Acrescenta `DecFuncao`, `Aplicacao`, `IfThenElse` (como expressão), `ValorFuncao` e um `RestrictTypesVisitor` pra inferir o tipo de identificadores livres no corpo de uma função. A semântica de escopo de função é dinâmica, não léxica (sem closures), confirmei isso testando os exemplos.
+Reaproveita praticamente 100% do pacote de expressões/memória do `le2`. Acrescenta `DecFuncao`, `Aplicacao`, `IfThenElse` (como expressão), `ValorFuncao` e um `RestrictTypesVisitor` pra inferir o tipo de identificadores livres no corpo de uma função. A semântica de escopo de função é dinâmica, não léxica (sem closures), confirmado testando os exemplos.
 
-Nesse estágio encontrei um problema no Java original: `ContextoExecucaoFuncional` não implementava `clone()` apesar da interface exigir (do jeito que estava, o Java não compilaria nesse ponto). No meu porte em Python implementei o `clone()` corretamente.
+Nesse estágio apareceu um problema no Java original: `ContextoExecucaoFuncional` não implementava `clone()` apesar da interface exigir (do jeito que estava, o Java não compilaria nesse ponto). No porte em Python o `clone()` foi implementado corretamente.
 
 ### li1, imperativo
 Ponto de bifurcação real: o Java troca todo o sistema de tipos (de um conjunto de tipos possíveis pra uma interface `Tipo` + enum `TipoPrimitivo`) e acrescenta `clone()`/`reduzir()` em toda expressão, então não dá pra reaproveitar a árvore de expressões do `le1`/`le2`. O pacote `memory`, por ser genérico, continua sendo reaproveitado do `le2` sem alteração. Acrescenta variáveis mutáveis (`:=`), sequência de comandos, blocos com declaração (`ComandoDeclaracao`), `while` e `write`.
 
-Uma simplificação que fiz: implementei o `clone()` de `ExpBinaria`/`ExpUnaria` uma única vez de forma genérica via `type(self)(...)`, em vez de cada operador concreto reimplementar `clone()` individualmente como faz o Java original.
+Uma simplificação adotada: o `clone()` de `ExpBinaria`/`ExpUnaria` foi implementado uma única vez de forma genérica via `type(self)(...)`, em vez de cada operador concreto reimplementar `clone()` individualmente como faz o Java original.
 
 ### li2, procedimentos
-Confirmei com `diff -rq` que os pacotes Java `expressions1`, `expressions2` e `imperative1` do `li2` são idênticos aos do `li1` (só o nome do pacote muda), então reaproveitei quase tudo via import direto. O que é novo de verdade: procedimentos parametrizados e recursivos (`DefProcedimento`, `DeclaracaoProcedimento`, `ChamadaProcedimento`, `TipoProcedimento`) e um `ContextoExecucaoImperativa2` com pilha paralela de procedimentos. O escopo de procedimento é dinâmico, igual no `lf1`: o corpo executa na pilha de quem chama.
+Confirmado com `diff -rq` que os pacotes Java `expressions1`, `expressions2` e `imperative1` do `li2` são idênticos aos do `li1` (só o nome do pacote muda), então quase tudo foi reaproveitado via import direto. O que é novo de verdade: procedimentos parametrizados e recursivos (`DefProcedimento`, `DeclaracaoProcedimento`, `ChamadaProcedimento`, `TipoProcedimento`) e um `ContextoExecucaoImperativa2` com pilha paralela de procedimentos. O escopo de procedimento é dinâmico, igual no `lf1`: o corpo executa na pilha de quem chama.
 
 ### loo1, orientação a objetos
-Esse foi o estágio mais trabalhoso. O pacote `orientadaObjetos1` tem cerca de 6700 linhas e usa nomes de pacote em português (`comando`, `expressao`, `declaracao`, `memoria`, `util`, `excecao`), diferente do `li1`/`li2` que usam inglês (`command`, `expression`, `declaration`, `memory`). Mantive essa nomenclatura em português no porte pra ficar fiel ao original.
+Esse foi o estágio mais trabalhoso. O pacote `orientadaObjetos1` tem cerca de 6700 linhas e usa nomes de pacote em português (`comando`, `expressao`, `declaracao`, `memoria`, `util`, `excecao`), diferente do `li1`/`li2` que usam inglês (`command`, `expression`, `declaration`, `memory`). Essa nomenclatura em português foi mantida no porte pra ficar fiel ao original.
 
 Assim como o `li1` bifurcou do `le2`, o `loo1` bifurca de novo: tem seu próprio sistema de tipos (`util.Tipo`/`TipoPrimitivo`/`TipoClasse`/`ListaTipo`) e sua própria árvore de expressões e comandos. Ainda assim reaproveita, via import direto (confirmado por diff ignorando só o nome do pacote raiz), peças de baixo nível já portadas: `le2.memory.Ambiente`/`Contexto`, `li1.util.Lista`, `li1.memory.ListaValor` e as exceções de identificador do `le2.memory`.
 
@@ -82,7 +82,7 @@ Os exemplos 3 e 4 reproduzem uma peculiaridade da linguagem: o método `insere` 
 
 ## 5. Testes e verificação
 
-Não fiz uma suíte automatizada de testes unitários. A verificação foi rodar cada `Exemplo*.py` de cada estágio e conferir a saída contra o comportamento esperado da classe `Exemplo*.java` correspondente, incluindo casos de erro proposital (como uma variável usada fora de escopo). Os 21 exemplos, nos seis estágios, dão a saída esperada:
+Não foi feita uma suíte automatizada de testes unitários. A verificação foi rodar cada `Exemplo*.py` de cada estágio e conferir a saída contra o comportamento esperado da classe `Exemplo*.java` correspondente, incluindo casos de erro proposital (como uma variável usada fora de escopo). Os 21 exemplos, nos seis estágios, dão a saída esperada:
 
 ```
 le1:  PLP UFS / 13 / True
@@ -95,4 +95,4 @@ loo1: 2 / 2 3 / 3 4 -100 / 2 3 4 -100 2 4 -100
 
 ## 6. Conclusão
 
-Esse projeto mostrou na prática um dos pontos centrais da disciplina: o quanto a escolha de abstrações (parâmetros opcionais, genéricos, interfaces mínimas) afeta o quanto dá pra reaproveitar código entre variantes de uma linguagem. Enquanto o Java resolve isso duplicando pacotes inteiros, no meu porte em Python eu resolvi reaproveitando módulo direto, reduzindo a diferença entre estágios ao que realmente muda semanticamente (tipos, escopo de execução, modelo de memória), e não ao que só muda de nome de pacote.
+Esse projeto mostrou na prática um dos pontos centrais da disciplina: o quanto a escolha de abstrações (parâmetros opcionais, genéricos, interfaces mínimas) afeta o quanto dá pra reaproveitar código entre variantes de uma linguagem. Enquanto o Java resolve isso duplicando pacotes inteiros, no Python a solução foi reaproveitar módulo direto, reduzindo a diferença entre estágios ao que realmente muda semanticamente (tipos, escopo de execução, modelo de memória), e não ao que só muda de nome de pacote.
