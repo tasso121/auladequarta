@@ -4,8 +4,7 @@ Port em Python da sequência de interpretadores da disciplina Paradigmas de
 Linguagens de Programacao (UFS), que originalmente fizemos em Java. Cada
 estagio acrescenta uma construcao de linguagem ao anterior, e o codigo e
 reaproveitado entre os estagios sempre que os pacotes Java de origem eram
-identicos ou genericos o suficiente (o Java original duplica o pacote
-inteiro a cada estagio, isso foi evitado aqui).
+identicos ou genericos o suficiente.
 
 ## Estagios
 
