@@ -1,11 +1,11 @@
-# Projeto PLP -- interpretadores le1 a loo1 (Java -> Python)
+# Projeto PLP, interpretadores le1 a loo1 (Java -> Python)
 
-Port em Python da hierarquia de interpretadores da disciplina Paradigmas de
-Linguagens de Programacao (UFS), originalmente em Java. Cada estagio
-acrescenta uma construcao de linguagem ao anterior, e o codigo e
-**reaproveitado entre os estagios** sempre que os pacotes Java de origem
-eram identicos ou genericos o suficiente (ao contrario do Java original,
-que duplica pacotes inteiros a cada estagio).
+Port em Python da sequência de interpretadores da disciplina Paradigmas de
+Linguagens de Programacao (UFS), que originalmente fizemos em Java. Cada
+estagio acrescenta uma construcao de linguagem ao anterior, e eu reaproveito
+codigo entre os estagios sempre que os pacotes Java de origem eram
+identicos ou genericos o suficiente (o Java original duplica o pacote
+inteiro a cada estagio, aqui eu evitei isso).
 
 ## Estagios
 
@@ -30,103 +30,84 @@ python3 -m loo1.Exemplo4
 ## Reaproveitamento entre estagios
 
 - `le1.expression.Expressao` ja nasce com um parametro opcional
-  `ambiente=None` em `avaliar/checaTipo/getTipo` -- le1 nunca usa esse
+  `ambiente=None` em `avaliar/checaTipo/getTipo`. O le1 nunca usa esse
   parametro, mas e o que permite le2/lf1 reaproveitarem as classes de
-  expressao de le1 **sem modifica-las**.
-- `le2.memory.{Ambiente,Contexto}` (pilha de escopos generica,
-  `Generic[T]`) e totalmente agnostica ao tipo armazenado -- por isso e
-  reaproveitada tambem por li1/li2/loo1, mesmo eles tendo um sistema de
+  expressao de le1 sem precisar mexer nelas.
+- `le2.memory.Ambiente` e `Contexto` (pilha de escopos generica,
+  `Generic[T]`) sao totalmente agnosticos ao tipo armazenado, por isso
+  reaproveito tambem em li1/li2/loo1, mesmo eles tendo um sistema de
   `Tipo` completamente diferente de le1/le2.
-- `li1` reaproveita `le2.memory` diretamente, mas tem seu proprio pacote
+- `li1` reaproveita `le2.memory` direto, mas tem seu proprio pacote
   `util.Tipo`/`TipoPrimitivo` (uma interface + `Enum`, em vez do
   `EnumSet` usado em le1/le2/lf1).
 - `li2` reaproveita quase todo o `li1` (expressoes, comandos, ambiente de
-  execucao/compilacao) e acrescenta apenas o necessario para
-  procedimentos: `TipoProcedimento`, `DefProcedimento`,
-  `DeclaracaoProcedimento`, `ChamadaProcedimento`, `ListaExpressao` e um
-  `ContextoExecucaoImperativa2` com uma pilha paralela de procedimentos.
+  execucao/compilacao) e acrescenta so o necessario pra procedimentos:
+  `TipoProcedimento`, `DefProcedimento`, `DeclaracaoProcedimento`,
+  `ChamadaProcedimento`, `ListaExpressao` e um `ContextoExecucaoImperativa2`
+  com uma pilha paralela de procedimentos.
 - `loo1` reaproveita `li1` (comandos `IfThenElse/While/SequenciaComando/
   Skip/ComandoDeclaracao/Write`, expressoes `Exp*`, `Id`) e o padrao de
-  procedimentos de `li2` (um metodo e, na pratica, um procedimento
-  associado a uma classe) -- ver secao especifica abaixo.
+  procedimentos do `li2` (um metodo e, na pratica, um procedimento
+  associado a uma classe). Ver secao especifica abaixo.
 
 ## loo1: notas de projeto
 
-O zip original de `loo1` chegou depois dos demais estagios. Uma primeira
-versao deste pacote foi implementada do zero a partir do PDF
-`PP_Lab06-_linguagem_loo1.pdf` (BNF, interface `AmbienteExecucaoOO1` e o
-pseudocodigo do comando `New`); quando o Java real (`orientadaObjetos1`,
-~6700 linhas) ficou disponivel, o pacote foi **reportado por completo**
-a partir dele, corrigindo varias suposicoes da versao especulativa.
-Diferente de li1/li2 (pacotes Java em ingles: `command`/`expression`/
-`declaration`/`memory`), o Java de loo1 usa nomes em portugues
-(`comando`/`expressao`/`declaracao`/`memoria`/`util`/`excecao`) -- o
-porte Python mantem essa mesma nomenclatura por fidelidade ao original.
+Esse pacote (`orientadaObjetos1` no Java, cerca de 6700 linhas) usa nomes
+de pacote em portugues (`comando`, `expressao`, `declaracao`, `memoria`,
+`util`, `excecao`), diferente do li1/li2 que usam ingles (`command`,
+`expression`, `declaration`, `memory`). Mantive essa nomenclatura em
+portugues no porte pra ficar fiel ao original.
 
-`orientadaObjetos1` bifurca (fork) toda a arvore de `comando`/
-`declaracao`/`expressao`/`util.Tipo*`, do mesmo jeito que li1 bifurcou de
-le2 -- tem seu proprio sistema de tipos (`util.Tipo`/`TipoPrimitivo`/
-`TipoClasse`/`ListaTipo`) e sua propria hierarquia de expressoes/
-comandos, tipada para `AmbienteExecucaoOO1`/`AmbienteCompilacaoOO1`.
-Ainda assim reaproveita, via import direto (confirmado por diff
-ignorando so o nome do pacote raiz), pecas de baixo nivel ja portadas:
-`le2.memory.{Ambiente,Contexto}` (pilha de escopos generica),
-`li1.util.Lista`, `li1.memory.ListaValor` e as excecoes de
-identificador de `le2.memory`.
+O loo1 bifurca toda a arvore de `comando`/`declaracao`/`expressao`/
+`util.Tipo*`, do mesmo jeito que o li1 bifurcou do le2: tem seu proprio
+sistema de tipos (`util.Tipo`/`TipoPrimitivo`/`TipoClasse`/`ListaTipo`) e
+sua propria hierarquia de expressoes/comandos, tipada pra
+`AmbienteExecucaoOO1`/`AmbienteCompilacaoOO1`. Mesmo assim reaproveita, via
+import direto (confirmado com diff ignorando so o nome do pacote raiz),
+pecas de baixo nivel ja portadas: `le2.memory.Ambiente`/`Contexto`,
+`li1.util.Lista`, `li1.memory.ListaValor` e as excecoes de identificador
+do `le2.memory`.
 
-Decisoes principais (a versao final, apos o porte fiel do Java real):
+Pontos principais do design:
 
-- **Heap simplesmente compartilhado por referencia, sem delegacao.**
-  `ContextoExecucaoOO1(ambiente)` nao implementa uma cadeia de delegacao
-  (isso era um chute da versao especulativa) -- ele so **reaproveita os
-  mesmos dicionarios** `mapObjetos`/`mapDefClasse` e o mesmo contador
-  `proxRef` do ambiente que o criou (semelhante a como HashMap/objetos em
-  Java sao passados por referencia). Nao ha metodo de delegacao nenhum;
-  e so nao copiar essas estruturas ao construir um novo contexto.
-- **Metodo executa numa pilha nova e descartavel, nao na do objeto.**
-  Diferente do que a versao especulativa supunha (metodo rodando na
-  pilha persistente do proprio objeto), `ChamadaMetodo`/
-  `ChamadaProcedimento` criam um `ContextoExecucaoOO1(ambiente)`
-  **novo e temporario** a cada chamada (compartilhando os dicionarios do
-  heap, como acima), mapeiam `this` e os parametros ali, executam o
-  corpo, e descartam esse contexto ao final. Atributos nunca passam por
-  essa pilha: leitura/escrita de atributo vai direto ao `Objeto.
-  getEstado()` (um dicionario piano, `ContextoObjeto`), alcancado via o
-  `mapObjetos` compartilhado -- e por isso que atributos persistem entre
-  chamadas de metodo mesmo com uma pilha nova a cada vez.
-- **Sem tabela de tipos memoizada por classe.** A versao especulativa
-  criava uma tabela per-classe para evitar recursao infinita ao checar
-  `this.prox.insere(v)`. O Java real evita o problema de forma
-  estrutural: `ChamadaMetodo`/`ChamadaProcedimento.checaTipo` so compara
-  a assinatura (aridade/tipos dos parametros formais vs. reais, checagem
-  O(1)) e **nunca reverifica o corpo do metodo chamado** -- o corpo e
-  checado uma unica vez, em `DecProcedimentoSimples.checaTipo`, no
-  momento da declaracao da classe. Chamadas recursivas nunca disparam
-  nova checagem de corpo, entao nao ha recursao em tempo de compilacao.
-- **`ValorRef` NAO reaproveita `ValorConcreto`.** Ao contrario do que a
-  versao especulativa fazia, `ValorRef` nao estende `ValorConcreto` --
-  isso e proposital: em `ExpEquals`, comparar um `ValorConcreto`
-  (`ValorNull`) com algo que nao e `ValorConcreto` (`ValorRef`) cai em
-  comparacao de identidade, que e exatamente o que faz `this.prox ==
-  null` virar `False` quando `prox` aponta pra um objeto real, e `True`
-  enquanto ainda for `ValorNull`.
-- **`LeftExpression` e uma hierarquia propria.** `Id` e
+- Heap compartilhado por referencia, sem delegacao. `ContextoExecucaoOO1(
+  ambiente)` nao faz nenhuma cadeia de delegacao, ele so reaproveita os
+  mesmos dicionarios `mapObjetos`/`mapDefClasse` e o mesmo contador
+  `proxRef` do ambiente que o criou (igual objetos em Java, que sao
+  passados por referencia).
+- Metodo executa numa pilha nova e descartavel, nao na do objeto.
+  `ChamadaMetodo`/`ChamadaProcedimento` criam um `ContextoExecucaoOO1(
+  ambiente)` novo a cada chamada (compartilhando os dicionarios do heap,
+  como acima), mapeiam `this` e os parametros ali, executam o corpo e
+  descartam o contexto no final. Atributo nunca passa por essa pilha:
+  leitura e escrita de atributo vai direto no `Objeto.getEstado()` (um
+  dicionario plano, `ContextoObjeto`), alcancado via o `mapObjetos`
+  compartilhado. E por isso que atributos persistem entre chamadas de
+  metodo mesmo com uma pilha nova toda vez.
+- Sem tabela de tipos memoizada por classe. `ChamadaMetodo`/
+  `ChamadaProcedimento.checaTipo` so compara a assinatura (aridade e
+  tipos dos parametros formais vs reais, checagem O(1)) e nunca
+  reverifica o corpo do metodo chamado. O corpo e checado uma unica vez,
+  em `DecProcedimentoSimples.checaTipo`, no momento da declaracao da
+  classe. Por isso chamadas recursivas nunca disparam nova checagem de
+  corpo e nao tem recursao em tempo de compilacao.
+- `ValorRef` nao reaproveita `ValorConcreto`. Em `ExpEquals`, comparar um
+  `ValorConcreto` (`ValorNull`) com algo que nao e `ValorConcreto`
+  (`ValorRef`) cai em comparacao de identidade, que e exatamente o que
+  faz `this.prox == null` virar `False` quando `prox` aponta pra um
+  objeto real, e `True` enquanto ainda for `ValorNull`.
+- `LeftExpression` e uma hierarquia propria. `Id` e
   `AcessoAtributoId`/`AcessoAtributoThis` implementam `LeftExpression`
-  (separada de `Expressao`), refletindo o Java: `AcessoAtributoId` acessa
-  um atributo a partir de um identificador (`obj.attr`), enquanto
-  `AcessoAtributoThis` acessa um atributo do proprio objeto corrente via
-  `this` -- a versao especulativa nao tinha essa distincao nem a
-  expressao `This`.
-- **I/O completo**: alem de `Write`, o Java real tem `Read`/`ReadFile`/
-  `WriteFile`/`IO`, todos portados (a versao especulativa so tinha
-  `Write`).
-- **`Exemplo3`/`Exemplo4` reproduzem fielmente uma peculiaridade do
-  material da disciplina**: o metodo `insere` sempre aloca um novo
-  no-sentinela vazio apos gravar um valor, e o metodo de impressao
-  percorre ate esse sentinela e o imprime tambem -- por isso a saida
-  inclui um `-100` residual ao final. Preservado tal como no Java
-  original, no mesmo espirito de manter comportamentos "estranhos" ja
-  adotado em `li1/Exemplo1.py`.
+  (separada de `Expressao`): `AcessoAtributoId` acessa um atributo a
+  partir de um identificador (`obj.attr`), enquanto `AcessoAtributoThis`
+  acessa um atributo do proprio objeto corrente via `this`.
+- I/O completo: alem do `Write`, tem `Read`/`ReadFile`/`WriteFile`/`IO`.
+- `Exemplo3`/`Exemplo4` reproduzem uma peculiaridade da linguagem: o
+  metodo `insere` sempre aloca um novo no sentinela vazio depois de
+  gravar um valor, e o metodo de impressao percorre ate esse sentinela e
+  imprime ele tambem. Por isso a saida inclui um `-100` residual no
+  final, preservado igual no Java, no mesmo espirito de manter
+  comportamentos "estranhos" que ja vem do `li1/Exemplo1.py`.
 
 ## Testando tudo
 
