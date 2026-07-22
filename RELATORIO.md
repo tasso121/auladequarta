@@ -1,7 +1,6 @@
 # Relatório do Projeto: Conversão Java to Python dos interpretadores le1 a loo1
 
 Disciplina: Paradigmas de Linguagem de Programação (PLP), UFS
-Repositório: git@github.com:tasso121/auladequarta.git
 
 ## 1. Objetivo
 
